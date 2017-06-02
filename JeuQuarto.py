@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from random import randint
+from time import sleep
+
 import pygame as pg
 from pygame.locals import *
 import numpy as np
@@ -9,8 +11,10 @@ from main import config_initiale, aleatoire, empirique, minmax, est_fini, suppor
 
 vide = np.zeros(4)
 
+
 def est_vide(l):
     return np.array_equal(np.zeros(4), l)
+
 
 # On note p = 16 le nombre de cases, pièces, et stade maximaux
 
@@ -179,7 +183,7 @@ def inddico_to_joueur(k, l):
             return empirique
     else:
         if l == 0:
-            return minmax
+            return lambda config: minmax(config, 0)
         if l == 1:
             return (prevoyante)
         else:
@@ -424,37 +428,59 @@ while continuer:
                 stade = 0
 
         ### Humain
-        elif joueur == 0 or (joueur != 0 and prio == stade % 2):
-            """O(p^2 + C(humain))"""
-            plateau, stock, donnee = config
+        elif joueur == 0:  # or (joueur != 0 and prio == stade % 2):
+            """O(p^2 + C(joueur))"""
+            position_image[22] = (510, 10)  # patientez
+            affichage()
+            pg.display.flip()
+
+            copie = copie_config(config)
+            config = empirique(config)
+            case, piece = modifications(copie, config)
 
             ### Placement
-            if action == 0:
-                k, l = coord_to_inddico(x, y, dico_plateau)
-                if k != -1 and l != -1 and (k, l) in support(plateau):
-                    # si l'humain a cliqué sur une case correcte non prise
-                    plateau[k][l] = donnee  # on pose la piece
-                    placement(k, l, plateau, donnee)
-
-                    if fin != -1:  # si le jeu est fini
-                        donnee = vide
-                        fini(fin, stade)
+            k, l = case
+            placement(k, l, config[0], copie[2])
 
             ### Don
-            else:
-                k, l = coord_to_inddico(x, y, dico_stock)
-                if k != -1 and l != -1:
-                    piece = matrice_stock(stock)[k][l]
-                    if not est_vide(piece):
-                        # si l'humain a cliqué sur une pièce encore dans le stock
-                        donnee = piece * 2 - 1
-                        removearray(stock, donnee)
-                        don(donnee)
+            if not est_vide(piece):
+                don(piece)
 
-            config = (plateau, stock, donnee)
+            if fin != -1:
+                fini(fin, stade)
+            position_image[22] = (-1, -1)
+            # print(config[0])
+            # """O(p^2 + C(humain))"""
+            # plateau, stock, donnee = config
+            #
+            # ### Placement
+            # if action == 0:
+            #     k, l = coord_to_inddico(x, y, dico_plateau)
+            #     if k != -1 and l != -1 and (k, l) in support(plateau):
+            #         # si l'humain a cliqué sur une case correcte non prise
+            #         plateau[k][l] = donnee  # on pose la piece
+            #         placement(k, l, plateau, donnee)
+            #
+            #         if fin != -1:  # si le jeu est fini
+            #             donnee = vide
+            #             fini(fin, stade)
+            #
+            # ### Don
+            # else:
+            #     k, l = coord_to_inddico(x, y, dico_stock)
+            #     if k != -1 and l != -1:
+            #         piece = matrice_stock(stock)[k][l]
+            #         if not est_vide(piece):
+            #             # si l'humain a cliqué sur une pièce encore dans le stock
+            #             donnee = piece * 2 - 1
+            #             removearray(stock, donnee)
+            #             don(donnee)
+            #
+            # config = (plateau, stock, donnee)
+            sleep(1)
 
         ### Intelligence artificielle
-        elif joueur != 0 and prio != stade % 2:
+        elif joueur != 0:  # and prio != stade % 2:
             """O(p^2 + C(joueur))"""
             position_image[22] = (510, 10)  # patientez
             affichage()
@@ -475,6 +501,8 @@ while continuer:
             if fin != -1:
                 fini(fin, stade)
             position_image[22] = (-1, -1)
+            # print(config[0])
+            sleep(1)
 
     # print(heuristique(config))
     # print(config[0])

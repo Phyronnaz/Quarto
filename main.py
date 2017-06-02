@@ -110,7 +110,7 @@ def support(plateau):
     ---Sortie--- O(p)
     Renvoie l'ensemble des cases vides du plateau
     """
-    return np.argwhere(np.sum(plateau, axis=2) == 0)
+    return np.argwhere(np.sum(np.abs(plateau), axis=2) == 0)
 
 
 def est_gagne(plateau):
@@ -268,8 +268,11 @@ def heuristique(config):
     plateau, stock, donnee = config
     stockred = stock_reduit(plateau, stock)
 
-    x = 15 - len(stockred)
-    return x if x != 15 else -1
+    if est_gagne(plateau):
+        return 16
+    else:
+        x = 15 - len(stockred)
+        return x if x != 15 else -1
 
 
 # ### Pour Minmax
@@ -473,7 +476,7 @@ def minimax_s(config, p):
 
     ### Si la partie est gagnée, nulle ou la profondeur est atteinte:
     if p <= 0 or est_fini(plateau) != -1 or len(stock) == 0:
-        return heuristique(config)
+        return -heuristique(config)
     else:
         return np.max([-minimax_s(jouer_coup(config, c, piece), p - 1) for c in supp for piece in stock])
 
@@ -587,8 +590,8 @@ def decision_minmax(config, profondeur):
     max_piece = -10000
     for case in supp:
         for piece in stock:
-            x = alphabeta(jouer_coup(config, case, piece), profondeur, -float("inf"), float("inf"))
-            # x = minimax_s(jouer_coup(config, case, piece), profondeur)
+            # x = alphabeta(jouer_coup(config, case, piece), profondeur, -float("inf"), float("inf"))
+            x = -minimax_s(jouer_coup(config, case, piece), profondeur)
             if x > m:
                 m = x
                 max_case = case
@@ -670,21 +673,19 @@ def empirique(config):
 
     if len(stock) == 0:  # s'il n'y a plus de pièces à donner
         return jouer_coup(config, support(plateau)[0], np.zeros(4, dtype=int))
-
     else:
         case = case_gagnante(config)
         if tuple(case) != (-1, -1):  # si on gagne
             return jouer_coup(config, case, stock[0])  # peut importe la piece qu'on donne
-
         else:  # si on ne gagne pas
+            # print("Action contrainte")
             return action_contrainte(config)
 
 
-p = 2
-staderech = 9
+staderech = 10
 
 
-def minmax(config):
+def minmax(config, p):
     """
     ---Entrée---
     config : configuration
@@ -1042,4 +1043,4 @@ def nuls(N):
 # l = statistiques(minmax, empirique, 10)
 # np.save("fichier_marrant_1.npy", l)
 
-comparaison(minmax, "minmax", aleatoire, "empirique", 10)
+comparaison(lambda c: minmax(c, 2), "minmax", empirique, "empirique", 10)
